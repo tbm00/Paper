@@ -1,0 +1,204 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: tbm00 <89701900+tbm00@users.noreply.github.com>
+Date: Tue, 5 Aug 2025 01:39:21 -0500
+Subject: [PATCH] tbm00's Paper/Purpur - Hard Barrel and Enderchest Rows
+
+
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index c9dbe659374e3ce140316116e05110567e44b810..b05f66796489e1ab66482d8e78e500248666b7b1 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -1010,6 +1010,23 @@ public abstract class PlayerList {
+         player.getBukkitEntity().recalculatePermissions(); // CraftBukkit
+         this.server.getCommands().sendCommands(player);
+         } // Paper - Add sendOpLevel API
++
++        // tbm00's Paper/Purpur start - Hard Barrel and Enderchest Rows
++        org.bukkit.craftbukkit.entity.CraftHumanEntity bukkit = player.getBukkitEntity();
++        if (bukkit.hasPermission("purpur.enderchest.rows.six")) {
++            player.sixRowEnderchestSlotCount = 54;
++        } else if (bukkit.hasPermission("purpur.enderchest.rows.five")) {
++            player.sixRowEnderchestSlotCount = 45;
++        } else if (bukkit.hasPermission("purpur.enderchest.rows.four")) {
++            player.sixRowEnderchestSlotCount = 36;
++        } else if (bukkit.hasPermission("purpur.enderchest.rows.three")) {
++            player.sixRowEnderchestSlotCount = 27;
++        } else if (bukkit.hasPermission("purpur.enderchest.rows.two")) {
++            player.sixRowEnderchestSlotCount = 18;
++        } else if (bukkit.hasPermission("purpur.enderchest.rows.one")) {
++            player.sixRowEnderchestSlotCount = 9;
++        }
++        // tbm00's Paper/Purpur end - Hard Barrel and Enderchest Rows
+     }
+ 
+     public boolean isWhiteListed(GameProfile profile) {
+diff --git a/net/minecraft/world/entity/player/Player.java b/net/minecraft/world/entity/player/Player.java
+index a0813aa9ebf5b32375b1bc9f294d8fc34cc867fe..c03062e8db37468f054df71f6b536d92ce463396 100644
+--- a/net/minecraft/world/entity/player/Player.java
++++ b/net/minecraft/world/entity/player/Player.java
+@@ -200,6 +200,7 @@ public abstract class Player extends LivingEntity {
+     private int currentImpulseContextResetGraceTime;
+     public boolean affectsSpawning = true; // Paper - Affects Spawning API
+     public net.kyori.adventure.util.TriState flyingFallDamage = net.kyori.adventure.util.TriState.NOT_SET; // Paper - flying fall damage
++    public int sixRowEnderchestSlotCount = -1; // tbm00's Paper/Purpur - Hard Barrel and Enderchest Rows
+ 
+     // CraftBukkit start
+     public boolean fauxSleeping;
+diff --git a/net/minecraft/world/inventory/ChestMenu.java b/net/minecraft/world/inventory/ChestMenu.java
+index 280169afbd637eeb67ddf7eaeb4eecd464a128d5..2baf8d845f7bcfb70508e827fdd13cf5c2bf2331 100644
+--- a/net/minecraft/world/inventory/ChestMenu.java
++++ b/net/minecraft/world/inventory/ChestMenu.java
+@@ -66,10 +66,30 @@ public class ChestMenu extends AbstractContainerMenu {
+         return new ChestMenu(MenuType.GENERIC_9x6, containerId, playerInventory, 6);
+     }
+ 
++    // tbm00's Paper/Purpur start - Hard Barrel and Enderchest Rows
++    public static ChestMenu oneRow(int containerId, Inventory playerInventory, Container container) {
++        return new ChestMenu(MenuType.GENERIC_9x1, containerId, playerInventory, container, 1);
++    }
++
++    public static ChestMenu twoRows(int containerId, Inventory playerInventory, Container container) {
++        return new ChestMenu(MenuType.GENERIC_9x2, containerId, playerInventory, container, 2);
++    }
++    // tbm00's Paper/Purpur end - Hard Barrel and Enderchest Rows
++
+     public static ChestMenu threeRows(int containerId, Inventory playerInventory, Container container) {
+         return new ChestMenu(MenuType.GENERIC_9x3, containerId, playerInventory, container, 3);
+     }
+ 
++    // tbm00's Paper/Purpur start - Hard Barrel and Enderchest Rows
++    public static ChestMenu fourRows(int containerId, Inventory playerInventory, Container container) {
++        return new ChestMenu(MenuType.GENERIC_9x4, containerId, playerInventory, container, 4);
++    }
++
++    public static ChestMenu fiveRows(int containerId, Inventory playerInventory, Container container) {
++        return new ChestMenu(MenuType.GENERIC_9x5, containerId, playerInventory, container, 5);
++    }
++    // tbm00's Paper/Purpur end - Hard Barrel and Enderchest Rows
++
+     public static ChestMenu sixRows(int containerId, Inventory playerInventory, Container container) {
+         return new ChestMenu(MenuType.GENERIC_9x6, containerId, playerInventory, container, 6);
+     }
+diff --git a/net/minecraft/world/inventory/PlayerEnderChestContainer.java b/net/minecraft/world/inventory/PlayerEnderChestContainer.java
+index a6a359bab2a727f4631b633a8bb370dd40decc75..0441d0bb456f33c3c9d987fb952d2eb3074cd58a 100644
+--- a/net/minecraft/world/inventory/PlayerEnderChestContainer.java
++++ b/net/minecraft/world/inventory/PlayerEnderChestContainer.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.world.inventory;
+ 
+ import javax.annotation.Nullable;
++
+ import net.minecraft.core.HolderLookup;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.nbt.ListTag;
+@@ -25,11 +26,18 @@ public class PlayerEnderChestContainer extends SimpleContainer {
+     }
+ 
+     public PlayerEnderChestContainer(Player owner) {
+-        super(27);
++        super(54); // tbm00's Paper/Purpur - Hard Barrel and Enderchest Rows
+         this.owner = owner;
+         // CraftBukkit end
+     }
+ 
++    // tbm00's Paper/Purpur start - Hard Barrel and Enderchest Rows
++    @Override
++    public int getContainerSize() {
++        return owner.sixRowEnderchestSlotCount < 0 ? super.getContainerSize() : owner.sixRowEnderchestSlotCount;
++    }
++    // tbm00's Paper/Purpur end - Hard Barrel and Enderchest Rows
++
+     public void setActiveChest(EnderChestBlockEntity enderChestBlockEntity) {
+         this.activeChest = enderChestBlockEntity;
+     }
+diff --git a/net/minecraft/world/level/block/EnderChestBlock.java b/net/minecraft/world/level/block/EnderChestBlock.java
+index f5533960708bdbaf2eacefbc7c7c3123b7d26502..ad3ba9815841cd4c0e7929d94371c38d91e1e438 100644
+--- a/net/minecraft/world/level/block/EnderChestBlock.java
++++ b/net/minecraft/world/level/block/EnderChestBlock.java
+@@ -1,7 +1,9 @@
+ package net.minecraft.world.level.block;
+ 
+-import com.mojang.serialization.MapCodec;
+ import javax.annotation.Nullable;
++
++import com.mojang.serialization.MapCodec;
++
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
+ import net.minecraft.core.particles.ParticleTypes;
+@@ -85,8 +87,8 @@ public class EnderChestBlock extends AbstractChestBlock<EnderChestBlockEntity> i
+                 enderChestInventory.setActiveChest(enderChestBlockEntity); // Needs to happen before ChestMenu.threeRows as it is required for opening animations
+                 if (level instanceof ServerLevel serverLevel && player.openMenu(
+                     new SimpleMenuProvider(
+-                        (containerId, playerInventory, player1) -> ChestMenu.threeRows(containerId, playerInventory, enderChestInventory), CONTAINER_TITLE
+-                    )
++                        (containerId, playerInventory, player1) -> getEnderChestSixRows(containerId, playerInventory, player, enderChestInventory), CONTAINER_TITLE
++                    ) // tbm00's Paper/Purpur - Hard Barrel and Enderchest Rows
+                 ).isPresent()) {
+                 // Paper end - Fix InventoryOpenEvent cancellation - moved up;
+                     player.awardStat(Stats.OPEN_ENDERCHEST);
+@@ -100,6 +102,33 @@ public class EnderChestBlock extends AbstractChestBlock<EnderChestBlockEntity> i
+         }
+     }
+ 
++    // tbm00's Paper/Purpur start - Hard Barrel and Enderchest Rows
++    private ChestMenu getEnderChestSixRows(int syncId, net.minecraft.world.entity.player.Inventory inventory, Player player, PlayerEnderChestContainer playerEnderChestContainer) {
++        org.bukkit.craftbukkit.entity.CraftHumanEntity bukkitPlayer = player.getBukkitEntity();
++        if (bukkitPlayer.hasPermission("purpur.enderchest.rows.six")) {
++            player.sixRowEnderchestSlotCount = 54;
++            return ChestMenu.sixRows(syncId, inventory, playerEnderChestContainer);
++        } else if (bukkitPlayer.hasPermission("purpur.enderchest.rows.five")) {
++            player.sixRowEnderchestSlotCount = 45;
++            return ChestMenu.fiveRows(syncId, inventory, playerEnderChestContainer);
++        } else if (bukkitPlayer.hasPermission("purpur.enderchest.rows.four")) {
++            player.sixRowEnderchestSlotCount = 36;
++            return ChestMenu.fourRows(syncId, inventory, playerEnderChestContainer);
++        } else if (bukkitPlayer.hasPermission("purpur.enderchest.rows.three")) {
++            player.sixRowEnderchestSlotCount = 27;
++            return ChestMenu.threeRows(syncId, inventory, playerEnderChestContainer);
++        } else if (bukkitPlayer.hasPermission("purpur.enderchest.rows.two")) {
++            player.sixRowEnderchestSlotCount = 18;
++            return ChestMenu.twoRows(syncId, inventory, playerEnderChestContainer);
++        } else if (bukkitPlayer.hasPermission("purpur.enderchest.rows.one")) {
++            player.sixRowEnderchestSlotCount = 9;
++            return ChestMenu.oneRow(syncId, inventory, playerEnderChestContainer);
++        }
++        player.sixRowEnderchestSlotCount = -1;
++        return ChestMenu.sixRows(syncId, inventory, playerEnderChestContainer);
++    }
++    // tbm00's Paper/Purpur end - Hard Barrel and Enderchest Rows
++
+     @Override
+     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+         return new EnderChestBlockEntity(pos, state);
+diff --git a/net/minecraft/world/level/block/entity/BarrelBlockEntity.java b/net/minecraft/world/level/block/entity/BarrelBlockEntity.java
+index 0f808855f58281578c2758513787f0f7330c9291..11cdbbe75f10e1b253842a6a20d0f2e0a5b8b8b9 100644
+--- a/net/minecraft/world/level/block/entity/BarrelBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/BarrelBlockEntity.java
+@@ -55,7 +55,7 @@ public class BarrelBlockEntity extends RandomizableContainerBlockEntity {
+         this.maxStack = i;
+     }
+     // CraftBukkit end
+-    private NonNullList<ItemStack> items = NonNullList.withSize(27, ItemStack.EMPTY);
++    private NonNullList<ItemStack> items = NonNullList.withSize(54, ItemStack.EMPTY); // tbm00's Paper/Purpur - Hard Barrel and Enderchest Rows
+     public final ContainerOpenersCounter openersCounter = new ContainerOpenersCounter() {
+         @Override
+         protected void onOpen(Level level, BlockPos pos, BlockState state) {
+@@ -107,7 +107,7 @@ public class BarrelBlockEntity extends RandomizableContainerBlockEntity {
+ 
+     @Override
+     public int getContainerSize() {
+-        return 27;
++        return 54; // tbm00's Paper/Purpur - Hard Barrel and Enderchest Rows
+     }
+ 
+     @Override
+@@ -127,7 +127,7 @@ public class BarrelBlockEntity extends RandomizableContainerBlockEntity {
+ 
+     @Override
+     protected AbstractContainerMenu createMenu(int id, Inventory player) {
+-        return ChestMenu.threeRows(id, player, this);
++        return ChestMenu.sixRows(id, player, this); // tbm00's Paper/Purpur - Hard Barrel and Enderchest Rows
+     }
+ 
+     @Override
